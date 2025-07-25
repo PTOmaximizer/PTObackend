@@ -9,7 +9,7 @@ app.use(express.json());
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
-});;
+});
 
 app.post("/generate-plan", async (req, res) => {
   const data = req.body;
@@ -29,13 +29,11 @@ Give a friendly summary and then recommend specific dates to take off if possibl
 
   try {
     const completion = await openai.chat.completions.create({
-  model: "gpt-4",
-  messages: [{ role: "user", content: prompt }],
-});
-
+      model: "gpt-4",
+      messages: [{ role: "user", content: prompt }],
     });
 
-    res.json({ result: completion.data.choices[0].message.content });
+    res.json({ result: completion.choices[0].message.content });
   } catch (error) {
     console.error("Error:", error);
     res.status(500).json({ error: "Something went wrong." });
