@@ -1,17 +1,18 @@
 const express = require("express");
 const cors = require("cors");
-const OpenAI = require("openai");
+const { Configuration, OpenAIApi } = require("openai");
 require("dotenv").config();
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-const openai = new OpenAI({
+const configuration = new Configuration({
   apiKey: process.env.OPENAI_API_KEY,
 });
+const openai = new OpenAIApi(configuration);
 
-app.post("/generate-plan", async (req, res) => {
+app.post("/api/chat", async (req, res) => {
   const data = req.body;
 
   const prompt = `
@@ -28,12 +29,12 @@ Give a friendly summary and then recommend specific dates to take off if possibl
   `;
 
   try {
-    const completion = await openai.chat.completions.create({
+    const completion = await openai.createChatCompletion({
       model: "gpt-4",
       messages: [{ role: "user", content: prompt }],
     });
 
-    res.json({ result: completion.choices[0].message.content });
+    res.json({ result: completion.data.choices[0].message.content });
   } catch (error) {
     console.error("Error:", error);
     res.status(500).json({ error: "Something went wrong." });
