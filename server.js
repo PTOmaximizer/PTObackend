@@ -12,7 +12,7 @@ const configuration = new Configuration({
 });
 const openai = new OpenAIApi(configuration);
 
-app.post("/api/chat", async (req, res) => {
+app.post("/generate-plan", async (req, res) => {
   const data = req.body;
 
   const prompt = `
