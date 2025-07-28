@@ -11,21 +11,31 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
+// Health check route (optional)
+app.get("/", (req, res) => {
+  res.send("✅ PTO backend is running.");
+});
+
 app.post("/generate-plan", async (req, res) => {
-  const data = req.body;
+  const { country, startDate, ptoDays, daysOff, vacationStart, vacationEnd } = req.body;
+
+  // Validate required fields
+  if (!country || !startDate || !ptoDays || !Array.isArray(daysOff)) {
+    return res.status(400).json({ error: "Missing or invalid required fields." });
+  }
 
   const prompt = `
 You are a vacation planning assistant. Based on the info below, suggest how the user can best use their PTO to get long weekends and maximize time off in 2025.
 
 Details:
-- Country: ${data.country}
-- Start Date: ${data.startDate}
-- PTO Hours Remaining: ${data.ptoDays}
-- Existing Days Off: ${data.daysOff.join(", ") || "none"}
-- Planned Vacations: ${data.vacationStart || "none"} to ${data.vacationEnd || "none"}
+- Country: ${country}
+- Start Date: ${startDate}
+- PTO Days Remaining: ${ptoDays}
+- Existing Days Off: ${daysOff.join(", ") || "none"}
+- Planned Vacations: ${vacationStart || "none"} to ${vacationEnd || "none"}
 
 Give a friendly summary and then recommend specific dates to take off if possible.
-  `;
+`;
 
   try {
     const completion = await openai.chat.completions.create({
@@ -33,11 +43,21 @@ Give a friendly summary and then recommend specific dates to take off if possibl
       messages: [{ role: "user", content: prompt }],
     });
 
-    res.json({ result: completion.choices[0].message.content });
+    const message = completion.choices?.[0]?.message?.content;
+
+    if (!message) {
+      throw new Error("Empty response from OpenAI");
+    }
+
+    res.json({ result: message });
   } catch (error) {
-    console.error("Error:", error);
-    res.status(500).json({ error: "Something went wrong." });
+    console.error("❌ OpenAI error:", error);
+    res.status(500).json({ error: "Failed to generate plan. Please try again." });
   }
 });
 
-app.listen(3000, () => console.log("✅ Server running on http://localhost:3000"));
+// Dynamic port for Render deployment
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`✅ Server running on port ${PORT}`);
+});
